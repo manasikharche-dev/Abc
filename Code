@@ -1,0 +1,593 @@
+1)  
+motion = input("Is motion detected? (yes/no): ").lower()
+
+if motion == "yes":
+    print("Camera is on, recording started")
+
+    doorbell = input("Is doorbell ringing? (yes/no): ").lower()
+
+    if doorbell == "yes":
+        print("Message sent to owner")
+
+        relative = input("Is visitor a relative? (yes/no): ").lower()
+
+        if relative == "yes":
+            owner_home = input("Is owner at home? (yes/no): ").lower()
+
+            if owner_home == "no":
+                password = input("Enter password: ")
+
+                if password == "1234":
+                    print("Entry accessed")
+                else:
+                    print("Entry denied")
+            else:
+                print("Owner at home")
+                print("Normal entry allowed")
+        else:
+            print("No relative")
+            print("If maid, entry allowed")
+    else:
+        print("No doorbell ringing")
+else:
+    print("No motion detected")
+    print("Camera is off")              
+             
+
+2)
+from collections import deque
+
+# BFS
+def bfs(maze, start, goal):
+    rows = len(maze)
+    cols = len(maze[0])
+
+    queue = deque([start])
+    visited = {start}
+    parent = {start: None}
+
+    directions = [
+        (-1, 0),
+        (1, 0),
+        (0, -1),
+        (0, 1)
+    ]
+
+    while queue:
+        current = queue.popleft()
+
+        if current == goal:
+            break
+
+        r, c = current
+
+        for dr, dc in directions:
+            nr = r + dr
+            nc = c + dc
+
+            if (0 <= nr < rows and 0 <= nc < cols
+                    and maze[nr][nc] == 0
+                    and (nr, nc) not in visited):
+
+                visited.add((nr, nc))
+                parent[(nr, nc)] = current
+                queue.append((nr, nc))
+
+    if goal not in parent:
+        return []
+
+    path = []
+    current = goal
+
+    while current is not None:
+        path.append(current)
+        current = parent[current]
+
+    path.reverse()
+    return path
+
+
+# DFS
+def dfs(maze, start, goal):
+    rows = len(maze)
+    cols = len(maze[0])
+
+    stack = [start]
+    visited = set()
+    parent = {start: None}
+
+    directions = [
+        (-1, 0),
+        (1, 0),
+        (0, -1),
+        (0, 1)
+    ]
+
+    while stack:
+        current = stack.pop()
+
+        if current == goal:
+            break
+
+        if current in visited:
+            continue
+
+        visited.add(current)
+
+        r, c = current
+
+        for dr, dc in directions:
+            nr = r + dr
+            nc = c + dc
+
+            if (0 <= nr < rows and 0 <= nc < cols
+                    and maze[nr][nc] == 0
+                    and (nr, nc) not in visited):
+
+                parent[(nr, nc)] = current
+                stack.append((nr, nc))
+
+    if goal not in parent:
+        return []
+
+    path = []
+    current = goal
+
+    while current is not None:
+        path.append(current)
+        current = parent[current]
+
+    path.reverse()
+    return path
+
+
+# Maze
+maze = [
+    [0, 0, 0, 0, 0],
+    [0, 1, 1, 1, 0],
+    [0, 1, 1, 1, 0],
+    [0, 1, 1, 1, 0],
+    [0, 0, 0, 0, 0]
+]
+
+start = (0, 0)
+goal = (4, 2)
+
+
+# Run BFS
+bfs_path = bfs(maze, start, goal)
+
+# Run DFS
+dfs_path = dfs(maze, start, goal)
+
+
+print("BFS path:", bfs_path)
+print("BFS moves:", len(bfs_path) - 1)
+
+print()
+
+print("DFS path:", dfs_path)
+print("DFS moves:", len(dfs_path) - 1)
+
+3)
+
+import heapq
+
+directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+
+def heuristic(a, b):
+    return abs(a[0] - b[0]) + abs(a[1] - b[1])
+
+
+def search(maze, start, goal, algorithm):
+    rows, cols = len(maze), len(maze[0])
+    pq = [(heuristic(start, goal) if algorithm == "Greedy" else 0, start)]
+    parent = {}
+    cost = {start: 0}
+    visited = []
+    visited_set = set()
+
+    while pq:
+        _, current = heapq.heappop(pq)
+
+        if current in visited_set:
+            continue
+
+        visited_set.add(current)
+        visited.append(current)
+
+        if current == goal:
+            path = []
+            while current in parent:
+                path.append(current)
+                current = parent[current]
+            path.append(start)
+            return path[::-1], visited
+
+        for dr, dc in directions:
+            r = current[0] + dr
+            c = current[1] + dc
+            neighbor = (r, c)
+
+            if (0 <= r < rows and 0 <= c < cols
+                    and maze[r][c] == 0
+                    and neighbor not in visited_set):
+
+                new_cost = cost[current] + 1
+
+                if algorithm == "Greedy":
+                    if neighbor not in parent and neighbor != start:
+                        parent[neighbor] = current
+                        cost[neighbor] = new_cost
+                        priority = heuristic(neighbor, goal)
+                        heapq.heappush(pq, (priority, neighbor))
+
+                else:  # A* Search
+                    if new_cost < cost.get(neighbor, float('inf')):
+                        cost[neighbor] = new_cost
+                        parent[neighbor] = current
+                        priority = new_cost + heuristic(neighbor, goal)
+                        heapq.heappush(pq, (priority, neighbor))
+
+    return None, visited
+
+
+def display_maze(maze, path):
+    path = set(path)
+
+    for r in range(len(maze)):
+        for c in range(len(maze[0])):
+            if maze[r][c] == 1:
+                print('#', end=' ')
+            elif (r, c) in path:
+                print('P', end=' ')
+            else:
+                print('.', end=' ')
+        print()
+
+
+maze = [
+    [0, 1, 0, 0, 0, 0],
+    [0, 1, 0, 1, 1, 0],
+    [0, 0, 0, 0, 1, 0],
+    [1, 1, 1, 0, 0, 0],
+    [0, 0, 0, 0, 1, 0]
+]
+
+start = (0, 0)
+goal = (4, 5)
+
+for algorithm in ["Greedy", "A*"]:
+    path, visited = search(maze, start, goal, algorithm)
+
+    print("\n", algorithm, "Search")
+    print("Visited:", visited)
+
+    if path:
+        print("Path:", path)
+        display_maze(maze, path)
+    else:
+        print("No path found.")
+
+4)
+
+facts = {"raining"}
+initial_facts = facts.copy()
+
+rules = {
+    "raining": "road wet",
+    "road wet": "road slippery"
+}
+
+print("Initial Facts:", facts)
+
+# Forward Chaining
+print("\nForward Chaining")
+
+new_fact = True
+
+while new_fact:
+    new_fact = False
+
+    for condition, result in rules.items():
+        if condition in facts and result not in facts:
+            print("Rule fired:", condition, "->", result)
+            facts.add(result)
+            new_fact = True
+
+print("\nFacts after Forward Chaining:", facts)
+
+# Backward Chaining
+print("\nBackward Chaining")
+
+def backward(goal):
+    print("Checking goal:", goal)
+
+    if goal in initial_facts:
+        print(goal, "is a fact")
+        return True
+
+    for condition, result in rules.items():
+        if result == goal:
+            print("Using rule:", condition, "->", result)
+
+            if backward(condition):
+                return True
+
+    return False
+
+
+goal = "road slippery"
+
+if backward(goal):
+    print("\nGoal", goal, "can be proved.")
+else:
+    print("\nGoal", goal, "cannot be proved.")
+
+
+5)
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.datasets import load_diabetes
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+
+# Load dataset
+data = load_diabetes(as_frame=True)
+df = data.frame
+
+# Introduce missing values for practice
+df.loc[0:4, "bmi"] = float("nan")
+df.loc[5:9, "bp"] = float("nan")
+
+# Display data and statistics
+print(df.head())
+print(df.describe())
+
+# Check missing values
+print("Missing values before handling:")
+print(df.isnull().sum())
+
+# Handle missing values using column median
+df = df.fillna(df.median())
+
+print("Missing values after handling:")
+print(df.isnull().sum())
+
+# Separate features and target
+X = df.drop(columns=["target"])
+y = df["target"]
+
+# Split dataset
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# Feature scaling
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# Histogram
+df.hist(figsize=(10, 8))
+plt.tight_layout()
+plt.show()
+
+# Boxplot
+df.plot(kind="box", subplots=True, layout=(3, 4),
+        figsize=(12, 8))
+plt.tight_layout()
+plt.show()
+
+print("Preprocessing completed")
+print("Training size:", len(X_train))
+print("Testing size:", len(X_test))
+
+
+6)
+import pandas as pd
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+
+# Load dataset
+data = load_breast_cancer()
+df = pd.DataFrame(data.data, columns=data.feature_names)
+df["target"] = data.target
+
+# Display dataset
+print("First 5 rows:")
+print(df.head())
+
+print("\nDataset Description:")
+print(df.describe())
+
+# Separate input and output
+X = df.drop(columns=["target"])
+y = df["target"]
+
+# Split dataset
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# Logistic Regression
+m1 = make_pipeline(
+    StandardScaler(),
+    LogisticRegression(max_iter=1000)
+)
+m1.fit(X_train, y_train)
+p1 = m1.predict(X_test)
+
+# KNN
+m2 = make_pipeline(
+    StandardScaler(),
+    KNeighborsClassifier(n_neighbors=5)
+)
+m2.fit(X_train, y_train)
+p2 = m2.predict(X_test)
+
+# Evaluation
+for name, p in [("Logistic Regression", p1), ("KNN", p2)]:
+    print("\n", name)
+    print("Accuracy:", accuracy_score(y_test, p))
+    print("Precision:", precision_score(y_test, p))
+    print("Recall:", recall_score(y_test, p))
+    print("F1 Score:", f1_score(y_test, p))
+
+
+7)
+import pandas as pd
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
+
+data = load_breast_cancer()
+df = pd.DataFrame(data.data, columns=data.feature_names)
+df["target"] = data.target
+
+print(df.head())
+print(df.describe())
+
+X = df.drop(columns=["target"])
+y = df["target"]
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+m1 = make_pipeline(StandardScaler(), LogisticRegression(max_iter=1000))
+m1.fit(X_train, y_train)
+p1 = m1.predict(X_test)
+
+m2 = make_pipeline(StandardScaler(), KNeighborsClassifier(n_neighbors=5))
+m2.fit(X_train, y_train)
+p2 = m2.predict(X_test)
+
+for name, p in [("Logistic Regression", p1), ("KNN", p2)]:
+    print("\n", name)
+    print("Accuracy:", accuracy_score(y_test, p))
+    print("Precision:", precision_score(y_test, p))
+    print("Recall:", recall_score(y_test, p))
+    print("F1 Score:", f1_score(y_test, p))
+    print("Confusion Matrix:")
+    print(confusion_matrix(y_test, p))
+
+8)
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.datasets import make_blobs
+from sklearn.cluster import KMeans, AgglomerativeClustering
+from sklearn.preprocessing import StandardScaler
+from scipy.cluster.hierarchy import dendrogram, linkage
+
+X, _ = make_blobs(n_samples=200, centers=5, random_state=42)
+X = StandardScaler().fit_transform(X)
+
+df = pd.DataFrame(X, columns=['Annual Income', 'Spending Score'])
+
+wcss = []
+for k in range(1, 11):
+    model = KMeans(n_clusters=k, random_state=42, n_init=10)
+    model.fit(X)
+    wcss.append(model.inertia_)
+
+plt.plot(range(1, 11), wcss, marker='o')
+plt.title("Elbow Method")
+plt.xlabel("Number of Clusters")
+plt.ylabel("WCSS")
+plt.show()
+
+kmeans = KMeans(n_clusters=5, random_state=42, n_init=10)
+df['KMeans_Cluster'] = kmeans.fit_predict(X)
+
+plt.scatter(X[:, 0], X[:, 1], c=df['KMeans_Cluster'], cmap='rainbow')
+plt.title("K-Means Clustering")
+plt.xlabel("Annual Income")
+plt.ylabel("Spending Score")
+plt.show()
+
+Z = linkage(X, method='ward')
+plt.figure(figsize=(10, 5))
+dendrogram(Z, truncate_mode='lastp', p=30)
+plt.title("Hierarchical Clustering Dendrogram")
+plt.show()
+
+hc = AgglomerativeClustering(n_clusters=5, linkage='ward')
+df['Hierarchical_Cluster'] = hc.fit_predict(X)
+
+plt.scatter(X[:, 0], X[:, 1], c=df['Hierarchical_Cluster'], cmap='rainbow')
+plt.title("Hierarchical Clustering")
+plt.xlabel("Annual Income")
+plt.ylabel("Spending Score")
+plt.show()
+
+print("K-Means Cluster Analysis:")
+print(df.groupby('KMeans_Cluster')[['Annual Income', 'Spending Score']].mean().round(2))
+
+print("\nHierarchical Cluster Analysis:")
+print(df.groupby('Hierarchical_Cluster')[['Annual Income', 'Spending Score']].mean().round(2))
+
+10)
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.datasets import make_blobs
+from sklearn.cluster import KMeans, AgglomerativeClustering
+from sklearn.preprocessing import StandardScaler
+from scipy.cluster.hierarchy import dendrogram, linkage
+
+X, _ = make_blobs(n_samples=200, centers=5, random_state=42)
+X = StandardScaler().fit_transform(X)
+
+df = pd.DataFrame(X, columns=['Annual Income', 'Spending Score'])
+
+wcss = []
+for k in range(1, 11):
+    model = KMeans(n_clusters=k, random_state=42, n_init=10)
+    model.fit(X)
+    wcss.append(model.inertia_)
+
+plt.plot(range(1, 11), wcss, marker='o')
+plt.title("Elbow Method")
+plt.xlabel("Number of Clusters")
+plt.ylabel("WCSS")
+plt.show()
+
+kmeans = KMeans(n_clusters=5, random_state=42, n_init=10)
+df['KMeans_Cluster'] = kmeans.fit_predict(X)
+
+plt.scatter(X[:, 0], X[:, 1], c=df['KMeans_Cluster'], cmap='rainbow')
+plt.title("K-Means Clustering")
+plt.xlabel("Annual Income")
+plt.ylabel("Spending Score")
+plt.show()
+
+Z = linkage(X, method='ward')
+plt.figure(figsize=(10, 5))
+dendrogram(Z, truncate_mode='lastp', p=30)
+plt.title("Hierarchical Clustering Dendrogram")
+plt.show()
+
+hc = AgglomerativeClustering(n_clusters=5, linkage='ward')
+df['Hierarchical_Cluster'] = hc.fit_predict(X)
+
+plt.scatter(X[:, 0], X[:, 1], c=df['Hierarchical_Cluster'], cmap='rainbow')
+plt.title("Hierarchical Clustering")
+plt.xlabel("Annual Income")
+plt.ylabel("Spending Score")
+plt.show()
+
+print("K-Means Cluster Analysis:")
+print(df.groupby('KMeans_Cluster')[['Annual Income', 'Spending Score']].mean().round(2))
+
+print("\nHierarchical Cluster Analysis:")
+print(df.groupby('Hierarchical_Cluster')[['Annual Income', 'Spending Score']].mean().round(2)) 
